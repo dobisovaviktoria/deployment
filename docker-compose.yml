@@ -1,0 +1,79 @@
+services:
+    db-vd:
+        image: postgres:17.2-alpine
+        restart: always
+        environment:
+            POSTGRES_DB: 'infra_project'
+            POSTGRES_USER_FILE: /run/secrets/db_user
+            POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+        volumes:
+            - db-data-vd:/var/lib/postgresql/data
+        secrets:
+            - db_user
+            - db_password
+        networks:
+            - vd-net
+
+    groceryapp-vd:
+        build: .
+        depends_on:
+            - db-vd
+        environment:
+            SPRING_DATASOURCE_URL: jdbc:postgresql://db-vd:5432/infra_project
+            SPRING_DATASOURCE_USERNAME_FILE: /run/secrets/db_user
+            SPRING_DATASOURCE_PASSWORD_FILE: /run/secrets/db_password
+        secrets:
+            - db_user
+            - db_password
+        networks:
+            - vd-net
+
+    proxy-vd:
+        image: nginx:alpine
+        volumes:
+            - cert-data-vd:/etc/letsencrypt
+            - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+            - ./nginx:/var/www/certbot
+        depends_on:
+            - groceryapp-vd
+        ports:
+            - "80:80"
+            - "443:443"
+        networks:
+            - vd-net
+
+    certbot:
+        image: certbot/certbot
+        volumes:
+            - cert-data-vd:/etc/letsencrypt
+            - ./nginx:/var/www/certbot
+        restart: "no"
+        entrypoint: >
+            sh -c "certbot certonly --webroot -w /var/www/certbot
+            --email viktoria.dobisova@student.kdg.be --agree-tos --no-eff-email
+            -d groceryappvd.duckdns.org --force-renewal"
+        networks:
+            - vd-net
+
+    duckdns:
+        image: linuxserver/duckdns
+        environment:
+            - SUBDOMAINS=groceryappvd
+            - TOKEN=ace1927f-bf19-4f0b-8adb-e78fcbafee2c
+        restart: unless-stopped
+        networks:
+            - vd-net
+
+secrets:
+    db_user:
+        file: ./secrets/db_user.txt
+    db_password:
+        file: ./secrets/db_password.txt
+
+volumes:
+    db-data-vd:
+    cert-data-vd:
+
+networks:
+    vd-net:
+

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Grocery List</title>
+  <link rel="stylesheet" href="/css/css.css">
+  <script src="/js/js.js" defer></script>
+</head>
+<body>
+
+<h1>My Grocery List</h1>
+
+<form id="add-form">
+  <label for="name">Name</label>
+  <input id="name" name="name" type="text" placeholder="Item name" required />
+
+  <label for="quantity">Quantity</label>
+  <input id="quantity" name="quantity" type="number" placeholder="Quantity" min="1" required />
+
+  <label for="category">Category</label>
+  <select id="category" required>
+    <option value="" disabled selected>Select Category</option>
+  </select>
+
+  <button type="submit">Add Item</button>
+</form>
+
+<table>
+  <thead>
+  <tr>
+    <th>Item</th>
+    <th>Quantity</th>
+    <th>Category</th>
+    <th>Action</th>
+  </tr>
+  </thead>
+  <tbody id="grocery-list">
+  <!-- Items will be dynamically inserted here -->
+  </tbody>
+</table>
+
+</body>
+</html>
