@@ -8,7 +8,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/groceries")
 public class GroceryController {
 
     private final GroceryService groceryService;
@@ -17,7 +16,7 @@ public class GroceryController {
         this.groceryService = groceryService;
     }
 
-    @GetMapping
+    @GetMapping("/")
     public String index(Model model) {
         model.addAttribute("items", groceryService.getAllItems());
         model.addAttribute("newItem", new GroceryItem());
