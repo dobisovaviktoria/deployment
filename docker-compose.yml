@@ -30,12 +30,18 @@ services:
         networks:
             - default
 
+    frontend-vd:
+        build: ./frontend
+        networks:
+            - default
+
     proxy-vd:
         image: nginx:alpine
         volumes:
             - ./cert/fullchain.pem:/etc/cert/fullchain.pem
             - ./cert/privkey.pem:/etc/cert/privkey.pem
             - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+            - ./frontend:/usr/share/nginx/html
         depends_on:
             - groceryapp-vd
         ports:
