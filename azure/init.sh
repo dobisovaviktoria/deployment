@@ -8,6 +8,8 @@ VM_SIZE="Standard_B2ts_v2"
 IMAGE="Ubuntu2204"
 SSH_KEY="$HOME/.ssh/infra3_key.pub"
 DUCKDNS_DOMAIN="groceryappvd"
+DUCKDNS_TOKEN="ace1927f-bf19-4f0b-8adb-e78fcbafee2c"
+EMAIL="viktoria.dobisova@student.kdg.be"
 
 if ! command -v az &> /dev/null; then
     echo "Error: Azure CLI is not installed. Please install before running the script."
@@ -15,18 +17,15 @@ if ! command -v az &> /dev/null; then
 fi
 
 if [ ! -f "$SSH_KEY" ]; then
-    echo "Error: Missing SSH public key."
+    echo "Error: Missing SSH public key at $SSH_KEY"
     exit 1
 fi
 
 echo "CREATING RESOURCE GROUP: $RESOURCE_GROUP"
-if ! az group create --name "$RESOURCE_GROUP" --location "$LOCATION" > /dev/null; then
-    echo "Error: Failed to create resource group."
-    exit 1
-fi
+az group create --name "$RESOURCE_GROUP" --location "$LOCATION" > /dev/null
 
 echo "CREATING VM: $VIRTUAL_MACHINE"
-if ! az vm create \
+az vm create \
     --resource-group "$RESOURCE_GROUP" \
     --name "$VIRTUAL_MACHINE" \
     --image "$IMAGE" \
@@ -34,35 +33,34 @@ if ! az vm create \
     --ssh-key-values "$SSH_KEY" \
     --size "$VM_SIZE" \
     --public-ip-sku Standard \
-    --public-ip-address-dns-name "$DUCKDNS_DOMAIN"; then
+    --public-ip-address-dns-name "$DUCKDNS_DOMAIN" || {
     echo "Error: Failed to create VM."
     exit 1
-fi
+}
 
 echo "INSTALLING DOCKER"
-INSTALL_SCRIPT='
+INSTALL_SCRIPT=$(cat <<EOF
+#!/bin/bash
 sudo apt-get update -y
 sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable"
 sudo apt-get update -y
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo systemctl enable docker
 sudo systemctl start docker
-sudo usermod -aG docker azureuser
-docker compose version
-'
-if ! az vm run-command invoke --resource-group "$RESOURCE_GROUP" --name "$VIRTUAL_MACHINE" --command-id RunShellScript --scripts "$INSTALL_SCRIPT" > /dev/null; then
-    echo "Docker setup failed."
-    exit 1
-fi
+sudo usermod -aG docker $USER
+EOF
+)
+
+az vm run-command invoke --resource-group "$RESOURCE_GROUP" --name "$VIRTUAL_MACHINE" --command-id RunShellScript --scripts "$INSTALL_SCRIPT" > /dev/null
 
 echo "RETRIEVING PUBLIC IP"
 PUBLIC_IP=$(az vm list-ip-addresses \
     --resource-group "$RESOURCE_GROUP" \
     --name "$VIRTUAL_MACHINE" \
     --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" \
-    -o tsv 2>/dev/null)
+    -o tsv)
 
 if [ -z "$PUBLIC_IP" ]; then
     echo "Error: Failed to retrieve public IP for VM $VIRTUAL_MACHINE in resource group $RESOURCE_GROUP."
@@ -70,7 +68,7 @@ if [ -z "$PUBLIC_IP" ]; then
 fi
 
 echo "OPENING PORTS"
-PORTS=(22 80 443 8082)
+PORTS=(22 80 443 8080)
 for port in "${!PORTS[@]}"; do
     PORT=${PORTS[$port]}
     PRIORITY=$((900 + port))
@@ -80,6 +78,34 @@ for port in "${!PORTS[@]}"; do
 done
 
 FULL_DNS="https://${DUCKDNS_DOMAIN}.duckdns.org"
+
+echo "UPDATING DUCKDNS"
+DUCKDNS_UPDATE=$(cat <<EOF
+#!/bin/bash
+curl -k -o ~/duckdns.log "https://www.duckdns.org/update?domains=$DUCKDNS_DOMAIN&token=$DUCKDNS_TOKEN&ip="
+EOF
+)
+
+az vm run-command invoke \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$VIRTUAL_MACHINE" \
+  --command-id RunShellScript \
+  --scripts "$DUCKDNS_UPDATE"
+
+echo "INSTALLING & RUNNING CERTBOT"
+CERTBOT_SCRIPT=$(cat <<EOF
+#!/bin/bash
+sudo apt update
+sudo apt install -y certbot
+sudo certbot certonly --standalone --preferred-challenges http -d ${DUCKDNS_DOMAIN}.duckdns.org --agree-tos --non-interactive --email $EMAIL
+EOF
+)
+
+az vm run-command invoke \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$VIRTUAL_MACHINE" \
+  --command-id RunShellScript \
+  --scripts "$CERTBOT_SCRIPT"
 
 echo "VM setup successful"
 echo "Public IP Address: $PUBLIC_IP"
