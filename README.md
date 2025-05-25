@@ -1,93 +1,169 @@
-# viktoria-dobisova
+# Grocery App
 
-viktoria-dobisova
+## Author
+- Viktória Dobišová
+- viktoria.dobisova@student.kdg.be
+- Student number: 0165790-17
+- ACS201
+- 2024/2025
 
-## Getting started
+---
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Technologies Used
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- Java 17
+- Spring Boot
+- Gradle
+- PostgreSQL
+- Docker & Docker Compose
+- Nginx
+- Shell scripting
+- TLS Certificates
+- Docker Secrets
 
-## Add your files
+---
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Quick Start - Local Deployment
+
+1. After downloading the project from git, edit your hosts file to map the domain locally:
+   
+On Windows, open:
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/kdg-ti/infrastructure-3/2024-25/acs201/viktoria-dobisova.git
-git branch -M main
-git push -uf origin main
+C:\Windows\System32\drivers\etc\hosts
 ```
 
-## Integrate with your tools
+Add the following line (you need admin rights):
 
-- [ ] [Set up project integrations](https://gitlab.com/kdg-ti/infrastructure-3/2024-25/acs201/viktoria-dobisova/-/settings/integrations)
+```
+127.0.0.1       groceryappvd.duckdns.org
+```
 
-## Collaborate with your team
+2. Make sure your Docker Desktop is running
+3. From the root of the project folder, run:
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+```
+docker compose up -d
+```
 
-## Test and Deploy
+4. Visit: https://groceryappvd.duckdns.org
 
-Use the built-in continuous integration in GitLab.
+## Quick Start - Azure Deployment
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+1. Ensure the hosts file line is commented out:
 
-***
+```
+#	127.0.0.1       groceryappvd.duckdns.org
+```
 
-# Editing this README
+2. Generate an SSH key (if not already created):
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+```
+ssh-keygen -t ed25519 -f ~/.ssh/infra3_key
+```
 
-## Suggestions for a good README
+2. Clone the project into the linux environment:
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```
+git clone https://gitlab.com/kdg-ti/infrastructure-3/2024-25/acs201/viktoria-dobisova.git
+```
 
-## Name
-Choose a self-explaining name for your project.
+3. Make the init script executable:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```
+chmod +x ./viktoria-dobisova/azure/init.sh
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+4. Run the init script:
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```
+./viktoria-dobisova/azure/init.sh
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+5. Copy the project to the new virtual machine:
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```
+scp -i ~/.ssh/infra3_key -r ./viktoria-dobisova student@groceryappvd.duckdns.org:~
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+6. SSH into the virtual machine:
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```
+ssh -i ~/.ssh/infra3_key student@groceryappvd.duckdns.org
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+7. Update docker-compose.yml:
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+- update certificate link (no longer using self-signed certificates) 
+- secrets no longer work
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```
+ vim viktoria-dobisova/docker-compose.yml
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Changes affect the following 3 services:
 
-## License
-For open source projects, say how it is licensed.
+```
+db-vd:
+        image: postgres:17.2-alpine
+        restart: always
+        environment:
+            POSTGRES_DB: 'infra_project'
+            POSTGRES_USER: spring
+            POSTGRES_PASSWORD: spring
+        volumes:
+            - db-data-vd:/var/lib/postgresql/data
+        networks:
+            - default
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+```
+groceryapp-vd:
+        build: .
+        ports:
+            - "8080:8080"
+        depends_on:
+            - db-vd
+        environment:
+            SPRING_DATASOURCE_URL: jdbc:postgresql://db-vd:5432/infra_project
+            SPRING_DATASOURCE_USERNAME: spring
+            SPRING_DATASOURCE_PASSWORD: spring
+        networks:
+            - default
+```
+
+```
+proxy-vd:
+        image: nginx:alpine
+        volumes:
+            - /etc/letsencrypt/live/groceryappvd.duckdns.org/fullchain.pem:/etc/cert/fullchain.pem:ro
+            - /etc/letsencrypt/live/groceryappvd.duckdns.org/privkey.pem:/etc/cert/privkey.pem:ro
+            - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+            - ./frontend:/usr/share/nginx/html
+        depends_on:
+            - groceryapp-vd
+        ports:
+            - "80:80"
+            - "443:443"
+        networks:
+            - default
+```
+
+8. Navigate to the app folder:
+
+```
+cd viktoria-dobisova/
+```
+
+9. Start the services:
+
+```
+docker compose up -d
+```
+
+10. Visit: https://groceryappvd.duckdns.org
+
+
+## Note 
+ 
+- You can only issue 5 certs/week per domain (groceryappvd.duckdns.org). Avoid re-running Certbot unnecessarily.
