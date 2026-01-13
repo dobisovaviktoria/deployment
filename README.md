@@ -2,10 +2,6 @@
 
 ## Author
 - Viktória Dobišová
-- viktoria.dobisova@student.kdg.be
-- Student number: 0165790-17
-- ACS201
-- 2024/2025
 
 ---
 
